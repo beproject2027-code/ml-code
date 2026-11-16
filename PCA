@@ -1,0 +1,28 @@
+
+# ml=1
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as mp
+df=pd.read_csv(r'C:\Users\HP\Downloads\Wine dataset.csv')
+
+print(df.head())
+print(df.shape)
+
+x=df.drop('class',axis=1)
+y=df['class']
+
+s=StandardScaler()
+x=s.fit_transform(x)
+
+pca=PCA(n_components=2)
+x_pca=pca.fit_transform(x)
+
+#print(x_pca)
+print("explained_varience",pca.explained_variance_ratio_)
+ #print(df['class'].unique())
+mp.scatter(x_pca[:,0],x_pca[:,1],c=y)
+mp.xlabel("pc1")
+mp.ylabel("pc2")
+mp.title("pca")
+
