@@ -1,0 +1,135 @@
+#ml=2
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.metrics import r2_score, mean_squared_error
+# 1. Load dataset
+data = pd.read_csv(r"C:\Users\HP\Downloads\uber.csv")
+
+print("Shape:", data.shape)
+
+print(data.columns)
+
+# Check null values
+print("\nNull Values:")
+print(data.isnull().sum())
+
+# 2. Pre-processing
+data = data.drop(["Unnamed: 0", "key", "pickup_datetime"], axis=1)
+data = data.dropna()
+
+# Remove invalid values
+data = data[data["fare_amount"] > 0]
+data = data[data["passenger_count"] > 0]
+
+# Create distance feature
+data["distance"] = np.sqrt(
+    (data["dropoff_longitude"] - data["pickup_longitude"])**2 +
+    (data["dropoff_latitude"] - data["pickup_latitude"])**2
+)
+
+print("\nAfter Pre-processing:")
+print(data.head())
+
+# 3. Identify and remove outliers using IQR
+Q1 = data["fare_amount"].quantile(0.25)
+Q3 = data["fare_amount"].quantile(0.75)
+
+IQR = Q3 - Q1
+
+lower = Q1 - 1.5 * IQR
+upper = Q3 + 1.5 * IQR
+
+print("\nOutlier Limits:")
+print("Lower:", lower)
+print("Upper:", upper)
+
+data = data[
+    (data["fare_amount"] >= lower) &
+    (data["fare_amount"] <= upper)
+]
+
+# 4. Correlation
+print("\nCorrelation:")
+print(data.corr())
+
+# 5. Prepare data
+X = data.drop("fare_amount", axis=1)
+y = data["fare_amount"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 6. Linear Regression
+linear = LinearRegression()
+linear.fit(X_train, y_train)
+pred1 = linear.predict(X_test)
+
+# 7. Ridge Regression
+ridge = Ridge()
+ridge.fit(X_train, y_train)
+pred2 = ridge.predict(X_test)
+
+# 8. Lasso Regression
+lasso = Lasso()
+lasso.fit(X_train, y_train)
+pred3 = lasso.predict(X_test)
+
+# 9. Compare models
+models = ["Linear", "Ridge", "Lasso"]
+predictions = [pred1, pred2, pred3]
+
+# Linear Regression
+print("\nLinear Regression")
+print("R2 Score:", r2_score(y_test, pred1))
+print("RMSE:", np.sqrt(mean_squared_error(y_test, pred1)))
+
+# Ridge Regression
+print("\nRidge Regression")
+print("R2 Score:", r2_score(y_test, pred2))
+print("RMSE:", np.sqrt(mean_squared_error(y_test, pred2)))
+
+
+# Lasso Regression
+print("\nLasso Regression")
+print("R2 Score:", r2_score(y_test, pred3))
+print("RMSE:", np.sqrt(mean_squared_error(y_test, pred3)))
+
+# 10. Correlation graph
+plt.imshow(data.corr(), cmap="coolwarm")
+plt.colorbar()
+plt.title("Correlation Matrix")
+plt.show()
+
+# Store model scores
+r2_scores = [
+    r2_score(y_test, pred1),
+    r2_score(y_test, pred2),
+    r2_score(y_test, pred3)
+]
+
+rmse_scores = [
+    np.sqrt(mean_squared_error(y_test, pred1)),
+    np.sqrt(mean_squared_error(y_test, pred2)),
+    np.sqrt(mean_squared_error(y_test, pred3))
+]
+
+models = ["Linear", "Ridge", "Lasso"]
+
+# R2 Score Graph
+plt.bar(models, r2_scores)
+plt.title("R2 Score Comparison")
+plt.xlabel("Regression Models")
+plt.ylabel("R2 Score")
+plt.show()
+
+# RMSE Graph
+plt.bar(models, rmse_scores)
+plt.title("RMSE Comparison")
+plt.xlabel("Regression Models")
+plt.ylabel("RMSE")
+plt.show()
